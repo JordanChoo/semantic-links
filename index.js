@@ -3,8 +3,7 @@ require('dotenv').config();
 const { configurationOpenaAI, openAIApi } = require('openai');
 const fs = require('fs');
 const convertXml = require('xml-js');
-// const parseString = require('xml2js');
-const { convertHtml } = require('html-to-text');
+const convertHtml = require('html-to-text').convert;
 const { pinecone } = require('@pinecone-database/pinecone');
 
 // Set ENV variables
@@ -18,7 +17,7 @@ async function run() {
     let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
 
     // Parse XML file to JSON
-    let articlesJson = await convertXml.xml2js(articlesXml, {compact: false, spaces: 4, ignoreComment: true})
+    let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
 
     // Map Reduce (HTMl to Text + Parse Internal Links)
 
