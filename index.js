@@ -40,7 +40,7 @@ async function run() {
     });
 
     // Target a Pinecone index
-    const pineconeIndex = pinecone.index(PINECONE_API_INDEX);
+    const pineconeIndex = pinecone.index(PINECONE_INDEX);
 
     // OpenAI Vectorize + Push to Pinecone
     for (let article = 0; article < formattedJson.length; article++) {
