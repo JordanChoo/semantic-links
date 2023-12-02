@@ -51,10 +51,10 @@ async function run() {
             encoding_format: 'float'
         });
         // Push embedding to Pinecone
-        await pineconeIndex.upsert({
+        await pineconeIndex.upsert([{
             id: formattedJson[article]['wp:post_id']._text,
             values: embedding.data[0].embedding
-        });
+        }]);
 
     }
 
