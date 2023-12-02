@@ -55,7 +55,8 @@ async function run() {
             id: formattedJson[article]['wp:post_id']._text,
             values: embedding.data[0].embedding
         }]);
-
+        // Provide confirmation of saving
+        console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
     }
 
     // Upsert Pinecone Project
