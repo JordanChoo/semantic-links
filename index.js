@@ -6,6 +6,7 @@ const convertXml = require('xml-js');
 const convertHtml = require('html-to-text').convert;
 const { Pinecone } = require('@pinecone-database/pinecone');
 const OpenAI = require('openai');
+const { format } = require('path');
 
 // Set ENV variables
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
@@ -13,6 +14,8 @@ const PINECONE_INDEX = process.env.PINECONE_INDEX;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ARTICLE_POSTS = process.env.ARTICLE_POSTS;
+const TARGET_ARTICLE_ID = process.env.TARGET_ARTICLE_ID;
+const SCORE_THRESHOLD = process.env.SCORE_THRESHOLD;
 
 // Create OpenAI object
 const openai = new OpenAI({
@@ -36,7 +39,7 @@ async function run() {
     // Map Reduce (HTMl to Text + Parse Internal Links)
     let formattedJson = articlesJson.rss.channel.item.map((article) => {
         return { ...article,
-            articleText: convertHtml(article['content:encoded']._cdata)
+            articleText: convertHtml(article['content:encoded']._cdata, {linkBrackets: false, ignoreHref: true})
         };
     });
 
@@ -69,21 +72,26 @@ async function run() {
     // Save data to a JSON file
     fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
 
-    let targetArticleId = '';
-    let scoreThreshold = '';
+    // // Get matched opportunities from Pinecone
+    let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: '705'})
 
-    // Get matched opportunities from Pinecone
-    let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: targetArticleId})
-
-    // Map Reduce
-        opps.filter(function(opp) {
+    // Filter
+        let filteredOpps = opps.matches.filter(function(opp) {
             // Remove target article & articles below the scoreThreshold
-            return opp.id !== targetArticleId && opp.score > scoreThreshold;
+            return opp.id !== '705' && opp.score >= 0.7;
         })
-        // Remove articles already linked
+    
+    // Merge Pinecone Results + WP Data
+    let finalOpp = filteredOpps
+        .filter(opp => formattedJson.some(wp => wp['wp:post_id']._text === opp.id))
+        .map(finalOpp => ({
+            ...finalOpp,
+            link: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
+            title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata
+        }))
 
     // Save output as CSV
-        // ID, score, URL, title, 
+        // ID, score, URL, title
 
     // Send success message
 };
