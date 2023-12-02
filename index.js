@@ -44,14 +44,18 @@ async function run() {
 
     // OpenAI Vectorize + Push to Pinecone
     for (let article = 0; article < formattedJson.length; article++) {
-        const element = formattedJson[article];
         // Create embedding via OpenAI
         let embedding = await openai.embeddings.create({
             model: 'text-embedding-ada-002',
             input: formattedJson[article].articleText,
             encoding_format: 'float'
         });
-        // Push to Pinecone
+        // Push embedding to Pinecone
+        await pineconeIndex.upsert({
+            id: formattedJson[article]['wp:post_id']._text,
+            values: embedding.data[0].embedding
+        });
+
     }
 
     // Upsert Pinecone Project
