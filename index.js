@@ -54,6 +54,9 @@ module.exports = {
                 encoding_format: 'float'
             });
 
+            // Adde embedding data to JSON object
+            formattedJson[article].embedding = embedding
+
             // Push embedding to Pinecone
             await pineconeIndex.upsert([{
                 id: formattedJson[article]['wp:post_id']._text,
@@ -64,6 +67,11 @@ module.exports = {
             console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
         }
 
+        // Save data to a JSON file
+        fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
+
+        // Return something
+        return 'success!';
     },
 
     findLinkOpps: async () => {
