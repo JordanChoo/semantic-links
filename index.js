@@ -43,34 +43,34 @@ async function run() {
         };
     });
 
-    // // Target a Pinecone index
-    // const pineconeIndex = pinecone.index(PINECONE_INDEX);
+    // Target a Pinecone index
+    const pineconeIndex = pinecone.index(PINECONE_INDEX);
 
-    // // OpenAI Vectorize + Push to Pinecone
-    // for (let article = 0; article < formattedJson.length; article++) {
+    // OpenAI Vectorize + Push to Pinecone
+    for (let article = 0; article < formattedJson.length; article++) {
 
-    //     // Create embedding via OpenAI
-    //     let embedding = await openai.embeddings.create({
-    //         model: 'text-embedding-ada-002',
-    //         input: formattedJson[article].articleText,
-    //         encoding_format: 'float'
-    //     });
+        // Create embedding via OpenAI
+        let embedding = await openai.embeddings.create({
+            model: 'text-embedding-ada-002',
+            input: formattedJson[article].articleText,
+            encoding_format: 'float'
+        });
 
-    //     // Adde embedding data to JSON object
-    //     formattedJson[article].embedding = embedding
+        // Adde embedding data to JSON object
+        formattedJson[article].embedding = embedding
 
-    //     // Push embedding to Pinecone
-    //     await pineconeIndex.upsert([{
-    //         id: formattedJson[article]['wp:post_id']._text,
-    //         values: embedding.data[0].embedding
-    //     }]);
+        // Push embedding to Pinecone
+        await pineconeIndex.upsert([{
+            id: formattedJson[article]['wp:post_id']._text,
+            values: embedding.data[0].embedding
+        }]);
 
-    //     // Provide confirmation of saving
-    //     console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
-    // }
+        // Provide confirmation of saving
+        console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
+    }
 
-    // // Save data to a JSON file
-    // fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
+    // Save data to a JSON file
+    fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
 
     // Get matched opportunities from Pinecone
     let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: '705'})
@@ -92,12 +92,17 @@ async function run() {
         .map(finalOpp => ({
             ...finalOpp,
             link: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
-            title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata
-        }));
-
+            title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata,
+            htmlContent: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id)['content:encoded']._cdata
+        }))
+        .filter(finalOpp => {
+            return !finalOpp.htmlContent.includes(targetArticleInfo[0].link._text)
+        });
+    
+    
     // Save output as CSV
         // ID, score, URL, title
-
+        fs.writeFileSync('./output/opps.json', JSON.stringify(finalOpp));
     // Send success message
 };
 
