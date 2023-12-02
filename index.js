@@ -59,14 +59,6 @@ async function run() {
         console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
     }
 
-    // Upsert Pinecone Project
-
-    // Upsert Index Project
-
-    // Upsert Pinecone Project
-
-    // Upsert Embeddings
-
     // Semantic Search URL
 
     // Remove already linked results
