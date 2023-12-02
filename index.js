@@ -5,12 +5,18 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const convertHtml = require('html-to-text').convert;
 const { pinecone } = require('@pinecone-database/pinecone');
+const OpenAI = require('openai');
 
 // Set ENV variables
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ARTICLE_POSTS = process.env.ARTICLE_POSTS;
+
+// Create OpenAI object
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 async function run() {
     // Get XML file
