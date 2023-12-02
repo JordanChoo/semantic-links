@@ -9,7 +9,7 @@ const OpenAI = require('openai');
 
 // Set ENV variables
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
-const PINECONE_API_INDEX = process.env.PINECONE_API_INDEX;
+const PINECONE_INDEX = process.env.PINECONE_INDEX;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ARTICLE_POSTS = process.env.ARTICLE_POSTS;
