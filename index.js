@@ -18,6 +18,12 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Create Pinecone Obj
+const pinecone = new Pinecone({
+    apiKey: PINECONE_API_KEY,
+    environment: PINECONE_ENVIRONMENT,
+  });
+
 async function run() {
     // Get XML file
     let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
@@ -30,12 +36,6 @@ async function run() {
         return { ...article,
             articleText: convertHtml(article['content:encoded']._cdata)
         };
-    });
-
-    let embedding = await openai.embeddings.create({
-        model: 'text-embedding-ada-002',
-        input: formattedJson[0].articleText,
-        encoding_format: 'float'
     });
 
     // OpenAI Vectorize + Push to Pinecone
