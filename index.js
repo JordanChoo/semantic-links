@@ -6,7 +6,7 @@ const convertXml = require('xml-js');
 const convertHtml = require('html-to-text').convert;
 const { Pinecone } = require('@pinecone-database/pinecone');
 const OpenAI = require('openai');
-const { format } = require('path');
+const json2csv = require('json-2-csv');
 
 // Set ENV variables
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
@@ -106,14 +106,16 @@ async function run() {
         .filter(finalOpps => {
             delete finalOpps.htmlContent;
             delete finalOpps.values;
+            delete finalOpps.sparseValues;
+            delete finalOpps.metadata;
             return true;
         });
     
     
     // Save output as CSV
-        // ID, score, URL, title
-        fs.writeFileSync('./output/opps.json', JSON.stringify(finalOpp));
+    fs.writeFileSync('./output/opps.csv', await json2csv.json2csv(finalOpp));
     // Send success message
+    console.log(`There were ${finalOpps.length} link opportunities found for the URL ${ targetArticleInfo[0].link._text}`);
 };
 
 run();
