@@ -9,6 +9,7 @@ const OpenAI = require('openai');
 
 // Set ENV variables
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
+const PINECONE_API_INDEX = process.env.PINECONE_API_INDEX;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ARTICLE_POSTS = process.env.ARTICLE_POSTS;
@@ -37,6 +38,9 @@ async function run() {
             articleText: convertHtml(article['content:encoded']._cdata)
         };
     });
+
+    // Target a Pinecone index
+    const pineconeIndex = pinecone.index(PINECONE_API_INDEX);
 
     // OpenAI Vectorize + Push to Pinecone
     for (let article = 0; article < formattedJson.length; article++) {
