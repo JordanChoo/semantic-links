@@ -71,13 +71,16 @@ module.exports = {
         let targetArticleId = '';
 
         // Get matched opportunities from Pinecone
-        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 20, id: targetArticleId})
+        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: targetArticleId})
 
-        // Remove target article
+        // Map Reduce
 
-        // Remove articles already linked
+            // Remove target article
+
+            // Remove articles already linked
 
         // Save output as CSV
+            // ID, score, URL, title, 
 
         // Send success message
     }
