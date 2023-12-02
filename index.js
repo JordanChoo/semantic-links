@@ -88,15 +88,25 @@ async function run() {
     
     // Merge Pinecone Results + WP Data
     let finalOpp = filteredOpps
+        // Remove the target article from the opps
         .filter(opp => formattedJson.some(wp => wp['wp:post_id']._text === opp.id))
+        // Add WP link, title and HTML
         .map(finalOpp => ({
+            targetUrl: targetArticleInfo[0].link._text,
             ...finalOpp,
             link: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
             title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata,
             htmlContent: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id)['content:encoded']._cdata
         }))
+        // Remove articles already linking to target
         .filter(finalOpp => {
             return !finalOpp.htmlContent.includes(targetArticleInfo[0].link._text)
+        })
+        // clean up the opps for CSV output
+        .filter(finalOpps => {
+            delete finalOpps.htmlContent;
+            delete finalOpps.values;
+            return true;
         });
     
     
