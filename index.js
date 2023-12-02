@@ -72,14 +72,14 @@ async function run() {
     // Save data to a JSON file
     fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
 
-    // // Get matched opportunities from Pinecone
+    // Get matched opportunities from Pinecone
     let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: '705'})
 
     // Filter
-        let filteredOpps = opps.matches.filter(function(opp) {
-            // Remove target article & articles below the scoreThreshold
-            return opp.id !== '705' && opp.score >= 0.7;
-        })
+    let filteredOpps = opps.matches.filter(function(opp) {
+        // Remove target article & articles below the scoreThreshold
+        return opp.id !== '705' && opp.score >= 0.7;
+    })
     
     // Merge Pinecone Results + WP Data
     let finalOpp = filteredOpps
@@ -88,7 +88,7 @@ async function run() {
             ...finalOpp,
             link: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
             title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata
-        }))
+        }));
 
     // Save output as CSV
         // ID, score, URL, title
