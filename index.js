@@ -25,48 +25,61 @@ const pinecone = new Pinecone({
     environment: PINECONE_ENVIRONMENT,
   });
 
-async function run() {
-    // Get XML file
-    let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
+module.exports = {
 
-    // Parse XML file to JSON
-    let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
+    createEmebddings: async () => {
+        // Get XML file
+        let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
 
-    // Map Reduce (HTMl to Text + Parse Internal Links)
-    let formattedJson = articlesJson.rss.channel.item.map((article) => {
-        return { ...article,
-            articleText: convertHtml(article['content:encoded']._cdata)
-        };
-    });
+        // Parse XML file to JSON
+        let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
 
-    // Target a Pinecone index
-    const pineconeIndex = pinecone.index(PINECONE_INDEX);
-
-    // OpenAI Vectorize + Push to Pinecone
-    for (let article = 0; article < formattedJson.length; article++) {
-
-        // Create embedding via OpenAI
-        let embedding = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
-            input: formattedJson[article].articleText,
-            encoding_format: 'float'
+        // Map Reduce (HTMl to Text + Parse Internal Links)
+        let formattedJson = articlesJson.rss.channel.item.map((article) => {
+            return { ...article,
+                articleText: convertHtml(article['content:encoded']._cdata)
+            };
         });
 
-        // Push embedding to Pinecone
-        await pineconeIndex.upsert([{
-            id: formattedJson[article]['wp:post_id']._text,
-            values: embedding.data[0].embedding
-        }]);
+        // Target a Pinecone index
+        const pineconeIndex = pinecone.index(PINECONE_INDEX);
 
-        // Provide confirmation of saving
-        console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
+        // OpenAI Vectorize + Push to Pinecone
+        for (let article = 0; article < formattedJson.length; article++) {
+
+            // Create embedding via OpenAI
+            let embedding = await openai.embeddings.create({
+                model: 'text-embedding-ada-002',
+                input: formattedJson[article].articleText,
+                encoding_format: 'float'
+            });
+
+            // Push embedding to Pinecone
+            await pineconeIndex.upsert([{
+                id: formattedJson[article]['wp:post_id']._text,
+                values: embedding.data[0].embedding
+            }]);
+
+            // Provide confirmation of saving
+            console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
+        }
+
+    },
+
+    findLinkOpps: async () => {
+        
+        let targetArticleId = '';
+
+        // Get matched opportunities from Pinecone
+        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 20, id: targetArticleId})
+
+        // Remove target article
+
+        // Remove articles already linked
+
+        // Save output as CSV
+
+        // Send success message
     }
 
-    // Semantic Search URL
-
-    // Remove already linked results
-
-    // Output
-}
-
-run();
+};
