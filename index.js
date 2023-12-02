@@ -4,7 +4,7 @@ const { configurationOpenaAI, openAIApi } = require('openai');
 const fs = require('fs');
 const convertXml = require('xml-js');
 const convertHtml = require('html-to-text').convert;
-const { pinecone } = require('@pinecone-database/pinecone');
+const { Pinecone } = require('@pinecone-database/pinecone');
 const OpenAI = require('openai');
 
 // Set ENV variables
