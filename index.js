@@ -20,6 +20,11 @@ async function run() {
     let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
 
     // Map Reduce (HTMl to Text + Parse Internal Links)
+    let formattedJson = articlesJson = articlesJson.rss.channel.item.map((article) => {
+        return { ...article,
+            articleText: convertHtml(article['content:encoded']._cdata)
+        };
+    });
 
     // Map Reduce Vectorize
 
