@@ -26,13 +26,29 @@ async function run() {
     let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
 
     // Map Reduce (HTMl to Text + Parse Internal Links)
-    let formattedJson = articlesJson = articlesJson.rss.channel.item.map((article) => {
+    let formattedJson = articlesJson.rss.channel.item.map((article) => {
         return { ...article,
             articleText: convertHtml(article['content:encoded']._cdata)
         };
     });
 
-    // Map Reduce Vectorize
+    let embedding = await openai.embeddings.create({
+        model: 'text-embedding-ada-002',
+        input: formattedJson[0].articleText,
+        encoding_format: 'float'
+    });
+
+    // OpenAI Vectorize + Push to Pinecone
+    for (let article = 0; article < formattedJson.length; article++) {
+        const element = formattedJson[article];
+        // Create embedding via OpenAI
+        let embedding = await openai.embeddings.create({
+            model: 'text-embedding-ada-002',
+            input: formattedJson[article].articleText,
+            encoding_format: 'float'
+        });
+        // Push to Pinecone
+    }
 
     // Upsert Pinecone Project
 
