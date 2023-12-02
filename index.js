@@ -25,72 +25,65 @@ const pinecone = new Pinecone({
     environment: PINECONE_ENVIRONMENT,
   });
 
-module.exports = {
 
-    createEmebddings: async () => {
-        // Get XML file
-        let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
+async function run() {
+    // Get XML file
+    let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
 
-        // Parse XML file to JSON
-        let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
+    // Parse XML file to JSON
+    let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
 
-        // Map Reduce (HTMl to Text + Parse Internal Links)
-        let formattedJson = articlesJson.rss.channel.item.map((article) => {
-            return { ...article,
-                articleText: convertHtml(article['content:encoded']._cdata)
-            };
+    // Map Reduce (HTMl to Text + Parse Internal Links)
+    let formattedJson = articlesJson.rss.channel.item.map((article) => {
+        return { ...article,
+            articleText: convertHtml(article['content:encoded']._cdata)
+        };
+    });
+
+    // Target a Pinecone index
+    const pineconeIndex = pinecone.index(PINECONE_INDEX);
+
+    // OpenAI Vectorize + Push to Pinecone
+    for (let article = 0; article < formattedJson.length; article++) {
+
+        // Create embedding via OpenAI
+        let embedding = await openai.embeddings.create({
+            model: 'text-embedding-ada-002',
+            input: formattedJson[article].articleText,
+            encoding_format: 'float'
         });
 
-        // Target a Pinecone index
-        const pineconeIndex = pinecone.index(PINECONE_INDEX);
+        // Adde embedding data to JSON object
+        formattedJson[article].embedding = embedding
 
-        // OpenAI Vectorize + Push to Pinecone
-        for (let article = 0; article < formattedJson.length; article++) {
+        // Push embedding to Pinecone
+        await pineconeIndex.upsert([{
+            id: formattedJson[article]['wp:post_id']._text,
+            values: embedding.data[0].embedding
+        }]);
 
-            // Create embedding via OpenAI
-            let embedding = await openai.embeddings.create({
-                model: 'text-embedding-ada-002',
-                input: formattedJson[article].articleText,
-                encoding_format: 'float'
-            });
-
-            // Adde embedding data to JSON object
-            formattedJson[article].embedding = embedding
-
-            // Push embedding to Pinecone
-            await pineconeIndex.upsert([{
-                id: formattedJson[article]['wp:post_id']._text,
-                values: embedding.data[0].embedding
-            }]);
-
-            // Provide confirmation of saving
-            console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
-        }
-
-        // Save data to a JSON file
-        fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
-
-        // Return something
-        return 'success!';
-    },
-
-    findLinkOpps: async () => {
-        
-        let targetArticleId = '';
-
-        // Get matched opportunities from Pinecone
-        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: targetArticleId})
-
-        // Map Reduce
-
-            // Remove target article
-
-            // Remove articles already linked
-
-        // Save output as CSV
-            // ID, score, URL, title, 
-
-        // Send success message
+        // Provide confirmation of saving
+        console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
     }
 
+    // Save data to a JSON file
+    fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
+
+    let targetArticleId = '';
+
+    // Get matched opportunities from Pinecone
+    let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: targetArticleId})
+
+    // Map Reduce
+
+        // Remove target article
+
+        // Remove articles already linked
+
+    // Save output as CSV
+        // ID, score, URL, title, 
+
+    // Send success message
 };
+
+run();
