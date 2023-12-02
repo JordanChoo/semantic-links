@@ -70,14 +70,16 @@ async function run() {
     fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
 
     let targetArticleId = '';
+    let scoreThreshold = '';
 
     // Get matched opportunities from Pinecone
     let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: targetArticleId})
 
     // Map Reduce
-
-        // Remove target article
-
+        opps.filter(function(opp) {
+            // Remove target article & articles below the scoreThreshold
+            return opp.id !== targetArticleId && opp.score > scoreThreshold;
+        })
         // Remove articles already linked
 
     // Save output as CSV
