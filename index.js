@@ -30,92 +30,97 @@ const pinecone = new Pinecone({
 
 
 async function run() {
-    // Get XML file
-    let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
+    try {
+        // Get XML file
+        let articlesXml = await fs.readFileSync(ARTICLE_POSTS, 'utf8');
 
-    // Parse XML file to JSON
-    let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
+        // Parse XML file to JSON
+        let articlesJson = await convertXml.xml2js(articlesXml, {compact: true, spaces: 4, ignoreComment: true})
 
-    // Map Reduce (HTMl to Text + Parse Internal Links)
-    let formattedJson = articlesJson.rss.channel.item.map((article) => {
-        return { ...article,
-            articleText: convertHtml(article['content:encoded']._cdata, {linkBrackets: false, ignoreHref: true})
-        };
-    });
-
-    // Target a Pinecone index
-    const pineconeIndex = pinecone.index(PINECONE_INDEX);
-
-    // OpenAI Vectorize + Push to Pinecone
-    for (let article = 0; article < formattedJson.length; article++) {
-
-        // Create embedding via OpenAI
-        let embedding = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
-            input: formattedJson[article].articleText,
-            encoding_format: 'float'
+        // Map Reduce (HTMl to Text + Parse Internal Links)
+        let formattedJson = articlesJson.rss.channel.item.map((article) => {
+            return { ...article,
+                articleText: convertHtml(article['content:encoded']._cdata, {linkBrackets: false, ignoreHref: true})
+            };
         });
 
-        // Adde embedding data to JSON object
-        formattedJson[article].embedding = embedding
+        // Target a Pinecone index
+        const pineconeIndex = pinecone.index(PINECONE_INDEX);
 
-        // Push embedding to Pinecone
-        await pineconeIndex.upsert([{
-            id: formattedJson[article]['wp:post_id']._text,
-            values: embedding.data[0].embedding
-        }]);
+        // OpenAI Vectorize + Push to Pinecone
+        for (let article = 0; article < formattedJson.length; article++) {
 
-        // Provide confirmation of saving
-        console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
-    }
+            // Create embedding via OpenAI
+            let embedding = await openai.embeddings.create({
+                model: 'text-embedding-ada-002',
+                input: formattedJson[article].articleText,
+                encoding_format: 'float'
+            });
 
-    // Save data to a JSON file
-    fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
+            // Adde embedding data to JSON object
+            formattedJson[article].embedding = embedding
 
-    // Get matched opportunities from Pinecone
-    let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: '705'})
+            // Push embedding to Pinecone
+            await pineconeIndex.upsert([{
+                id: formattedJson[article]['wp:post_id']._text,
+                values: embedding.data[0].embedding
+            }]);
 
-    // Get Target Article Info
-    let targetArticleInfo = formattedJson.filter(function(target) {
-        return target['wp:post_id']._text === TARGET_ARTICLE_ID
-    })
+            // Provide confirmation of saving
+            console.log(`Post ${formattedJson[article]['wp:post_id']._text} embedding saved to Pinecone`);
+        }
 
-    // Filter
-    let filteredOpps = opps.matches.filter(function(opp) {
-        // Remove target article & articles below the scoreThreshold
-        return opp.id !== TARGET_ARTICLE_ID && opp.score >= 0.7;
-    })
-    
-    // Merge Pinecone Results + WP Data
-    let finalOpp = filteredOpps
-        // Remove the target article from the opps
-        .filter(opp => formattedJson.some(wp => wp['wp:post_id']._text === opp.id))
-        // Add WP link, title and HTML
-        .map(finalOpp => ({
-            targetUrl: targetArticleInfo[0].link._text,
-            ...finalOpp,
-            link: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
-            title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata,
-            htmlContent: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id)['content:encoded']._cdata
-        }))
-        // Remove articles already linking to target
-        .filter(finalOpp => {
-            return !finalOpp.htmlContent.includes(targetArticleInfo[0].link._text)
+        // Save data to a JSON file
+        fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedJson));
+
+        // Get matched opportunities from Pinecone
+        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: '705'})
+
+        // Get Target Article Info
+        let targetArticleInfo = formattedJson.filter(function(target) {
+            return target['wp:post_id']._text === TARGET_ARTICLE_ID
         })
-        // clean up the opps for CSV output
-        .filter(finalOpps => {
-            delete finalOpps.htmlContent;
-            delete finalOpps.values;
-            delete finalOpps.sparseValues;
-            delete finalOpps.metadata;
-            return true;
-        });
-    
-    
-    // Save output as CSV
-    fs.writeFileSync('./output/opps.csv', await json2csv.json2csv(finalOpp));
-    // Send success message
-    console.log(`There were ${finalOpps.length} link opportunities found for the URL ${ targetArticleInfo[0].link._text}`);
+
+        // Filter
+        let filteredOpps = opps.matches.filter(function(opp) {
+            // Remove target article & articles below the scoreThreshold
+            return opp.id !== TARGET_ARTICLE_ID && opp.score >= 0.7;
+        })
+        
+        // Merge Pinecone Results + WP Data
+        let finalOpp = filteredOpps
+            // Remove the target article from the opps
+            .filter(opp => formattedJson.some(wp => wp['wp:post_id']._text === opp.id))
+            // Add WP link, title and HTML
+            .map(finalOpp => ({
+                targetUrl: targetArticleInfo[0].link._text,
+                ...finalOpp,
+                link: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
+                title: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata,
+                htmlContent: formattedJson.find( wp => wp['wp:post_id']._text === finalOpp.id)['content:encoded']._cdata
+            }))
+            // Remove articles already linking to target
+            .filter(finalOpp => {
+                return !finalOpp.htmlContent.includes(targetArticleInfo[0].link._text)
+            })
+            // clean up the opps for CSV output
+            .filter(finalOpps => {
+                delete finalOpps.htmlContent;
+                delete finalOpps.values;
+                delete finalOpps.sparseValues;
+                delete finalOpps.metadata;
+                return true;
+            });
+        
+        
+        // Save output as CSV
+        fs.writeFileSync('./output/opps.csv', await json2csv.json2csv(finalOpp));
+        // Send success message
+        console.log(`There were ${finalOpps.length} link opportunities found for the URL ${ targetArticleInfo[0].link._text}`);
+    }
+    catch (error) {
+    console.log(error);
+    }
 };
 
 run();
