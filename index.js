@@ -60,14 +60,44 @@ async function run() {
             // Adde embedding data to JSON object
             formattedArticles[article].embedding = embedding
 
+        }
+
+        // Chunk the articles
+        const chunkedArticles = formattedArticles.reduce((chunkedResults, article, index) => { 
+
+            // Set the chunk size
+            const chunkIndex = Math.floor(index/50);
+            
+            // Start a new chunk
+            if(!chunkedResults[chunkIndex]) {
+                chunkedResults[chunkIndex] = [];
+            }
+            
+            // Add the article to the chunk
+            chunkedResults[chunkIndex].push(article)
+            
+            return chunkedResults
+        }, [])
+        
+        // Send the chunks to Pinecone
+        for (const chunk of chunkedArticles) {
+
+            // Create an empty embeddings array
+            let embeddings = [];
+
+            // Push the embeddings of each article to the embeddings
+            for (const article of chunk) {
+                embeddings.push({
+                    id: article['wp:post_id']._text,
+                    values: article.embedding
+                });
+            }
+
             // Push embedding to Pinecone
-            await pineconeIndex.upsert([{
-                id: formattedArticles[article]['wp:post_id']._text,
-                values: embedding.data[0].embedding
-            }]);
+            await pineconeIndex.upsert(embeddings);
 
             // Provide confirmation of saving
-            console.log(`Post ${formattedArticles[article]['wp:post_id']._text} embedding saved to Pinecone`);
+            console.log(`Pushed ${chunk.length} article embeddings to Pinecone`);
         }
 
         // Save data to a JSON file
