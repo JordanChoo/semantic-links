@@ -89,7 +89,7 @@ async function run() {
             for (const article of chunk) {
                 embeddings.push({
                     id: article['wp:post_id']._text,
-                    values: article.embedding
+                    values: article.embedding.data[0].embedding
                 });
             }
 
@@ -149,7 +149,8 @@ async function run() {
         console.log(`There were ${finalOpp.length} link opportunities found for the URL ${ targetArticleInfo[0].link._text}`);
     }
     catch (error) {
-    console.log(error);
+        console.log(error);
+        console.log(JSON.stringify(error))
     }
 };
 
