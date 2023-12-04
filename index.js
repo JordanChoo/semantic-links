@@ -14,7 +14,7 @@ const PINECONE_INDEX = process.env.PINECONE_INDEX;
 const PINECONE_ENVIRONMENT = process.env.PINECONE_ENVIRONMENT;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ARTICLE_POSTS = process.env.ARTICLE_POSTS;
-const TARGET_ARTICLE_ID = '705';
+const TARGET_ARTICLE_ID = process.env.TARGET_ARTICLE_ID;
 const SCORE_THRESHOLD = process.env.SCORE_THRESHOLD;
 
 // Create OpenAI object
@@ -104,7 +104,7 @@ async function run() {
         fs.writeFileSync('./output/article-embeddings.json', JSON.stringify(formattedArticles));
 
         // Get matched opportunities from Pinecone
-        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: '705'})
+        let opps = await pinecone.index(PINECONE_INDEX).query({ topK: 50, id: TARGET_ARTICLE_ID})
 
         // Get Target Article Info
         let targetArticleInfo = formattedArticles.filter(function(target) {
