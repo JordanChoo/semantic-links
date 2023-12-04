@@ -144,7 +144,7 @@ async function run() {
         
         
         // Save output as CSV
-        fs.writeFileSync('./output/opps.csv', await json2csv.json2csv(finalOpp));
+        fs.writeFileSync('./output/opps-'+TARGET_ARTICLE_ID+'.csv', await json2csv.json2csv(finalOpp));
         // Send success message
         console.log(`There were ${finalOpp.length} link opportunities found for the URL ${ targetArticleInfo[0].link._text}`);
     }
