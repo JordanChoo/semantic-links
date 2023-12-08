@@ -1,8 +1,10 @@
-# Welcome to Semantic Links! 
+# Welcome to Semantic Links! 👋 
 
 > :warning: **This is a proof of concept script** and should not be used in a production environment 
 
 Semantic Links uses vector search to identify internal linking opportunities at scale from Wordpress XML export files.
+
+**Want a step by step tutorial breaking down this script? Well [boogie on over here](https://jordanchoo.com/blog/finding-internal-link-opportunities-at-scale-with-vector-search/)💃🕺**
 
 ## Tech Stack
 Two main platforms are used which are:
@@ -22,7 +24,7 @@ Two main platforms are used which are:
 ## Notes on Performance
 With the testing that I conducted, I found that accuracy to be the biggest issue here. In that internal linking opportunities with high score thresholds were not topcially relevant while some opportunities that were flagged had higher relevancy.
 
-One idea on improving accuracy is potentially:
+A few ideas on improving accuracy is potentially:
 - Filtering results by meta data
 - Vectorizing and searching by page title rather than body content
 - Using hybrid search and sparse vectors
