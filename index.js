@@ -117,7 +117,7 @@ async function run() {
         // Filter
         let filteredOpps = opps.matches.filter(function(opp) {
             // Remove target article & articles below the scoreThreshold
-            return opp.id !== TARGET_ARTICLE_ID && opp.score >= 0.7;
+            return opp.id !== TARGET_ARTICLE_ID && opp.score >= SCORE_THRESHOLD;
         })
         
         // Merge Pinecone Results + WP Data
