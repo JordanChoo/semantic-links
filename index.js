@@ -89,7 +89,10 @@ async function run() {
             for (const article of chunk) {
                 embeddings.push({
                     id: article['wp:post_id']._text,
-                    values: article.embedding.data[0].embedding
+                    values: article.embedding.data[0].embedding,
+                    metadata: {
+                        category: article.category._cdata.toLowerCase()
+                    }
                 });
             }
 
@@ -126,9 +129,13 @@ async function run() {
                 targetUrl: targetArticleInfo[0].link._text,
                 ...finalOpp,
                 link: formattedArticles.find( wp => wp['wp:post_id']._text === finalOpp.id).link._text,
+                category: formattedArticles.find( wp => wp['wp:post_id']._text === finalOpp.id).category ? formattedArticles.find( wp => wp['wp:post_id']._text === finalOpp.id).category._cdata : '',
                 title: formattedArticles.find( wp => wp['wp:post_id']._text === finalOpp.id).title._cdata,
                 htmlContent: formattedArticles.find( wp => wp['wp:post_id']._text === finalOpp.id)['content:encoded']._cdata
             }))
+
+            
+
             // Remove articles already linking to target
             .filter(finalOpp => {
                 return !finalOpp.htmlContent.includes(targetArticleInfo[0].link._text)
