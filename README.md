@@ -11,13 +11,13 @@ Two main platforms are used which are:
 - [Pinecone](https://www.pinecone.io/) — Stores all of the page vectors which is then queried for internal linking opportunities based a relevancy threshold
 
 ## Environment Variables
-`PINECONE_API_KEY` — The API key for your Pinecone account
-`PINECONE_ENVIRONMENT` — The name of the environment for your Pinecone index
-`PINECONE_INDEX` — The name of the Pinecone Index your vectors are stored in
-`OPENAI_API_KEY` — Your OpenAI API key
-`ARTICLE_POST` — The exported WordPress XML file containing all of the posts and/or pages 
-`TARGET_ARTICLE_ID` — The WordPress ID for the article that you want to find internal links to
-`SCORE_THRESHOLD` — The minimum Pinecone Score threshold that must be met in order to be an internal link opportunity
+- `PINECONE_API_KEY` — The API key for your Pinecone account
+- `PINECONE_ENVIRONMENT` — The name of the environment for your Pinecone index
+- `PINECONE_INDEX` — The name of the Pinecone Index your vectors are stored in
+- `OPENAI_API_KEY` — Your OpenAI API key
+- `ARTICLE_POST` — The exported WordPress XML file containing all of the posts and/or pages 
+- `TARGET_ARTICLE_ID` — The WordPress ID for the article that you want to find internal links to
+- `SCORE_THRESHOLD` — The minimum Pinecone Score threshold that must be met in order to be an internal link opportunity
 
 ## Notes on Performance
 With the testing that I conducted, I found that accuracy to be the biggest issue here. In that internal linking opportunities with high score thresholds were not topcially relevant while some opportunities that were flagged had higher relevancy.
