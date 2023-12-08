@@ -44,9 +44,6 @@ async function run() {
             };
         });
 
-        // Target a Pinecone index
-        const pineconeIndex = pinecone.index(PINECONE_INDEX);
-
         // OpenAI Vectorize + Push to Pinecone
         for (let article = 0; article < formattedArticles.length; article++) {
 
@@ -77,7 +74,10 @@ async function run() {
             chunkedResults[chunkIndex].push(article)
             
             return chunkedResults
-        }, [])
+        }, []);
+
+        // Target a Pinecone index
+        const pineconeIndex = pinecone.index(PINECONE_INDEX);
         
         // Send the chunks to Pinecone
         for (const chunk of chunkedArticles) {
